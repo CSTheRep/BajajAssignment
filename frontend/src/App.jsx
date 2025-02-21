@@ -1,76 +1,91 @@
-import { useState } from "react";
-import axios from "axios";
-import Select from "react-select";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
-const options = [
-  { value: "alphabets", label: "Alphabets" },
-  { value: "numbers", label: "Numbers" },
-  { value: "highest_alphabet", label: "Highest Alphabet" }
-];
+import React, { useState } from 'react';
+import axios from 'axios';
 
 function App() {
-  const [jsonInput, setJsonInput] = useState("");
-  const [response, setResponse] = useState(null);
-  const [selectedFilters, setSelectedFilters] = useState([]);
+    const [input, setInput] = useState('');
+    const [response, setResponse] = useState(null);
+    const [selectedFilters, setSelectedFilters] = useState([]);
+    const [error, setError] = useState('');
 
-  const handleSubmit = async () => {
-    try {
-      const parsedInput = JSON.parse(jsonInput);
-      if (!parsedInput.data || !Array.isArray(parsedInput.data)) {
-        throw new Error("Invalid JSON format");
-      }
-      const res = await axios.post("https://your-backend-url.com/bfhl", parsedInput);
-      setResponse(res.data);
-      toast.success("Data processed successfully!");
-    } catch (error) {
-      toast.error("Invalid input or API error!");
-    }
-  };
+    const handleSubmit = async () => {
+        try {
+            const jsonInput = JSON.parse(input);
+            const res = await axios.post('https://bajajassignment-hn1c.onrender.com/priyanshutest', { data: jsonInput.data });
+            setResponse(res.data);
+            setError('');
+        } catch (err) {
+            setError('Invalid JSON input');
+        }
+    };
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-6">
-      <div className="w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-4 text-center">JSON Processor</h1>
+    const handleFilterChange = (filter) => {
+        if (selectedFilters.includes(filter)) {
+            setSelectedFilters(selectedFilters.filter(f => f !== filter));
+        } else {
+            setSelectedFilters([...selectedFilters, filter]);
+        }
+    };
 
-        <textarea
-          className="w-full p-2 border rounded-md"
-          rows="4"
-          placeholder='Enter JSON (e.g. { "data": ["A","B","1","3"] })'
-          value={jsonInput}
-          onChange={(e) => setJsonInput(e.target.value)}
-        />
+    const filteredResponse = () => {
+        if (!response) return null;
 
-        <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded-md mt-2 w-full">
-          Submit
-        </button>
+        const filtered = {};
+        if (selectedFilters.includes('Numbers')) {
+            filtered.numbers = response.numbers;
+        }
+        if (selectedFilters.includes('Alphabets')) {
+            filtered.alphabets = response.alphabets;
+        }
+        if (selectedFilters.includes('Highest Alphabet')) {
+            filtered.highest_alphabet = response.highest_alphabet;
+        }
 
-        {response && (
-          <div className="mt-4 w-full">
-            <Select
-              options={options}
-              isMulti
-              onChange={setSelectedFilters}
-              className="mb-2"
-              placeholder="Select response filters"
-            />
+        return filtered;
+    };
 
-            <div className="p-4 border rounded bg-white">
-              {selectedFilters.map((filter) => (
-                <p key={filter.value}>
-                  <strong>{filter.label}: </strong>
-                  {JSON.stringify(response[filter.value])}
-                </p>
-              ))}
+    return (
+        <div className="p-4">
+            <h1 className="text-2xl font-bold mb-4">22BCS15037</h1> 
+            <div className="mb-4">
+                <textarea
+                    className="w-full p-2 border rounded"
+                    placeholder="Enter JSON input"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                />
             </div>
-          </div>
-        )}
-      </div>
-      
-      <ToastContainer />
-    </div>
-  );
+            <button
+                className="bg-blue-500 text-white px-4 py-2 rounded"
+                onClick={handleSubmit}
+            >
+                Submit
+            </button>
+            {error && <p className="text-red-500 mt-2">{error}</p>}
+            {response && (
+                <div className="mt-4">
+                    <div className="mb-4">
+                        <label className="mr-2">Multi Filter:</label>
+                        {['Numbers', 'Alphabets', 'Highest Alphabet'].map(filter => (
+                            <label key={filter} className="mr-2">
+                                <input
+                                    type="checkbox"
+                                    checked={selectedFilters.includes(filter)}
+                                    onChange={() => handleFilterChange(filter)}
+                                />
+                                {filter}
+                            </label>
+                        ))}
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold">Filtered Response</h2>
+                        {Object.entries(filteredResponse()).map(([key, value]) => (
+                            <p key={key}>{key}: {value.join(', ')}</p>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default App;
